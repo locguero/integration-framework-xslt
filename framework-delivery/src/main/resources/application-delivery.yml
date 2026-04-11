@@ -1,0 +1,6 @@
+framework:
+  delivery:
+    iam-api:
+      base-url: ${IAM_API_BASE_URL:http://iam-service:8082}
+    wms:
+      kafka-topic: ${WMS_TOPIC:wms.orders.inbound}

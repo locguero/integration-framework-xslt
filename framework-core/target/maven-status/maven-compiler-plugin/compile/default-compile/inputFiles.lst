@@ -1,0 +1,6 @@
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/idempotency/IdempotencyFilter.java
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/model/IntegrationEnvelope.java
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/model/RoutingResult.java
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/routing/RoutingSlipExecutor.java
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/routing/StepRegistry.java
+/Users/guero/Downloads/integration-framework-xslt/framework-core/src/main/java/com/framework/core/security/SecurityContextExtractor.java

@@ -1,0 +1,5 @@
+com/framework/http/HttpTriggerRoute.class
+com/framework/http/HttpEnvelopeNormalizer.class
+com/framework/http/SecurityConfig.class
+com/framework/http/FrameworkHttpApplication.class
+com/framework/http/EnrichmentStep.class

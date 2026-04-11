@@ -1,0 +1,4 @@
+camel:
+  component:
+    kafka:
+      brokers: ${KAFKA_BROKERS:localhost:9092}

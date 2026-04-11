@@ -1,0 +1,46 @@
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://keycloak:8080/realms/integration}
+
+framework:
+  steps:
+    # Enrichment
+    enrich-user:           direct:step-enrich-user
+    # Validation (XSLT-driven)
+    validate-user:         direct:step-validate-user
+    validate-order:        direct:step-validate-order
+    # Transformation (XSLT-driven)
+    transform-to-iam:      direct:step-transform-iam
+    transform-to-wms:      direct:step-transform-wms
+    transform-generic:     direct:step-transform-generic
+    # Delivery
+    deliver-rest:          direct:step-deliver-rest
+    deliver-kafka:         direct:step-deliver-kafka
+    deliver-db:            direct:step-deliver-db
+    # Error / fallback
+    deliver-retry-queue:   direct:step-deliver-retry-queue
+    deliver-async-hold:    direct:step-deliver-async-hold
+    alert-ops:             direct:step-alert-ops
+    dead-letter:           direct:step-dead-letter
+
+camel:
+  main:
+    name: integration-framework-xslt
+  opentelemetry:
+    enabled: true
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

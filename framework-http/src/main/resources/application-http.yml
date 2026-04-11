@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+camel:
+  servlet:
+    mapping:
+      context-path: /api/*
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      user-lookup-api:
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 5
+
+framework:
+  enrichment:
+    base-url: ${USER_API_BASE_URL:http://user-service:8081}
