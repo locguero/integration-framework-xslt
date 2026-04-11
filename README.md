@@ -76,6 +76,7 @@ POST /api/integration/ingest
 |--------|----------|-------------|
 | `Content-Type` | yes | `application/json` |
 | `X-Correlation-Id` | yes | Unique ID for idempotency (replays with same ID return `ALREADY_PROCESSED`) |
+| `X-Trigger-Id` | no | Trigger type: `HTTP` (default), `CRON` — controls which XSLT routing branch is evaluated |
 | `X-Source-System` | yes | Source of the event: `CRM`, `ERP` |
 | `X-Entity-Type` | yes | Type of entity: `USER`, `ORDER` |
 | `X-Operation` | yes | Operation: `CREATE`, `MODIFY`, `UPDATE`, `DELETE` |
@@ -221,6 +222,55 @@ curl -i -X POST http://localhost:8080/api/integration/ingest \
 ```
 
 Expected: `200 OK` — `{"status":"ALREADY_PROCESSED","correlationId":"erp-order-001"}`
+
+---
+
+### CRON Batch → writes to batch_record table
+
+XSLT rule: `triggerId=CRON` → `transform-generic, deliver-db`
+
+The `X-Trigger-Id: CRON` header bypasses the source/entity rules and routes directly to the batch database delivery step. The record is written to the `batch_record` table and can be verified in the H2 console.
+
+```bash
+curl -i -X POST http://localhost:8080/api/integration/ingest \
+  -H "Content-Type: application/json" \
+  -H "X-Correlation-Id: cron-batch-001" \
+  -H "X-Trigger-Id: CRON" \
+  -H "X-Source-System: ERP" \
+  -H "X-Entity-Type: ORDER" \
+  -H "X-Operation: CREATE" \
+  -d '{
+    "id": "batch-1",
+    "orderId": "ORD-101",
+    "status": "PENDING",
+    "amount": 250.00
+  }'
+```
+
+Expected: `202 Accepted` — verify the record was written:
+
+```bash
+# H2 console at http://localhost:8080/h2-console
+SELECT * FROM batch_record;
+```
+
+Send multiple batch records (each needs a unique `X-Correlation-Id`):
+
+```bash
+for i in 1 2 3; do
+  curl -s -X POST http://localhost:8080/api/integration/ingest \
+    -H "Content-Type: application/json" \
+    -H "X-Correlation-Id: cron-batch-00$i" \
+    -H "X-Trigger-Id: CRON" \
+    -H "X-Source-System: ERP" \
+    -H "X-Entity-Type: ORDER" \
+    -H "X-Operation: CREATE" \
+    -d "{\"id\":\"batch-$i\",\"orderId\":\"ORD-10$i\",\"status\":\"PENDING\",\"amount\":$((i * 100)).00}"
+  echo ""
+done
+```
+
+> **Note:** In production the `framework-cron` module drives this automatically via a Quartz scheduler (every 5 minutes), polling `ErpPollingAdapter` and creating envelopes with `triggerId=CRON` internally — no HTTP call needed.
 
 ---
 

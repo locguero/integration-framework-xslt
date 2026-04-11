@@ -23,16 +23,17 @@ public class HttpEnvelopeNormalizer implements Processor {
         JsonNode payload = (body != null && !body.isBlank())
                 ? om.readTree(body) : om.createObjectNode();
 
-        String cid = h(exchange, "X-Correlation-Id", UUID.randomUUID().toString());
-        String src = h(exchange, "X-Source-System",  "UNKNOWN");
-        String ent = h(exchange, "X-Entity-Type",    "UNKNOWN");
-        String op  = h(exchange, "X-Operation",      "CREATE");
+        String cid  = h(exchange, "X-Correlation-Id", UUID.randomUUID().toString());
+        String trig = h(exchange, "X-Trigger-Id",    "HTTP");
+        String src  = h(exchange, "X-Source-System", "UNKNOWN");
+        String ent  = h(exchange, "X-Entity-Type",   "UNKNOWN");
+        String op   = h(exchange, "X-Operation",     "CREATE");
 
         Map<String, String> headers = new HashMap<>();
         exchange.getIn().getHeaders().forEach((k, v) -> { if (v != null) headers.put(k, v.toString()); });
 
         exchange.getIn().setBody(
-                IntegrationEnvelope.ofDefaults(cid, "HTTP", src, ent, op, headers, payload));
+                IntegrationEnvelope.ofDefaults(cid, trig, src, ent, op, headers, payload));
         exchange.setProperty("correlationId", cid);
     }
 
