@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="Integration Flow" id="integration-flow-main">
-        <mxGraphModel dx="2914" dy="440" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="2316" dy="560" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -128,7 +128,7 @@
                     <mxGeometry x="1160" y="955" width="130" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="resp-202" value="202 ACCEPTED&#xa;{status, correlationId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="555" y="630" width="160" height="50" as="geometry"/>
+                    <mxGeometry x="520" y="630" width="160" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="resp-422" value="422 REJECTED&#xa;{status, reason}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
                     <mxGeometry x="800" y="725" width="160" height="50" as="geometry"/>
@@ -137,10 +137,10 @@
                     <mxGeometry x="890" y="660" width="160" height="50" as="geometry"/>
                 </mxCell>
                 <mxCell id="reqlog-db" value="&lt;b&gt;Request Log&lt;/b&gt;&#xa;request_log table&#xa;(H2 file: ./framework-data/db)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1130" y="240" width="150" height="70" as="geometry"/>
+                    <mxGeometry x="1050" y="240" width="150" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="xslt-db" value="&lt;b&gt;XSLT Version Store&lt;/b&gt;&#xa;xslt_version table&#xa;(versioned + active flag)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="980" y="360" width="150" height="70" as="geometry"/>
+                    <mxGeometry x="870" y="360" width="150" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="admin-api" value="&lt;b&gt;Admin REST API&lt;/b&gt;&#xa;GET /admin/requests&#xa;GET /admin/requests/stats&#xa;GET|POST /admin/xslt/{file}&#xa;PUT /admin/xslt/{file}/activate/{v}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" parent="1" vertex="1">
                     <mxGeometry x="1240" y="484.5" width="170" height="100" as="geometry"/>
