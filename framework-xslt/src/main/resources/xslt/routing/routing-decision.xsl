@@ -39,6 +39,16 @@
     <routingResult>
       <xsl:choose>
 
+        <!-- ── Rule: CRON / BATCH trigger (evaluated first — takes priority) ── -->
+        <xsl:when test="$trig='CRON'">
+          <routingSlip>transform-generic,deliver-db</routingSlip>
+          <executionMode>TRANSIENT</executionMode>
+          <destination>BATCH_DB</destination>
+          <slaClass>BATCH</slaClass>
+          <validationResult>APPROVED</validationResult>
+          <rejectionReason/>
+        </xsl:when>
+
         <!-- ── Rule: CRM USER CREATE or MODIFY ──────────────────── -->
         <xsl:when test="$src='CRM' and $ent='USER' and ($op='CREATE' or $op='MODIFY')">
           <routingSlip>enrich-user,validate-user,transform-to-iam,deliver-rest</routingSlip>
@@ -75,16 +85,6 @@
           <executionMode>DURABLE</executionMode>
           <destination>WMS_KAFKA_TOPIC</destination>
           <slaClass>STANDARD</slaClass>
-          <validationResult>APPROVED</validationResult>
-          <rejectionReason/>
-        </xsl:when>
-
-        <!-- ── Rule: CRON / BATCH trigger ────────────────────────── -->
-        <xsl:when test="$trig='CRON'">
-          <routingSlip>transform-generic,deliver-db</routingSlip>
-          <executionMode>TRANSIENT</executionMode>
-          <destination>BATCH_DB</destination>
-          <slaClass>BATCH</slaClass>
           <validationResult>APPROVED</validationResult>
           <rejectionReason/>
         </xsl:when>

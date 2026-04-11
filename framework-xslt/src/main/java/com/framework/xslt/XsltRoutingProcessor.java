@@ -26,6 +26,8 @@ public class XsltRoutingProcessor implements Processor {
 
         exchange.setProperty("ROUTING_RESULT", result);
         exchange.setProperty("correlationId",  env.correlationId());
+        exchange.setProperty("sourceSystem",   env.sourceSystem());
+        exchange.setProperty("entityType",     env.entityType());
         exchange.setProperty("SLA_CLASS",      result.slaClass());
     }
 }

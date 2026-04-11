@@ -3,6 +3,11 @@ camel:
     kafka:
       brokers: ${KAFKA_BROKERS:localhost:9092}
 
+framework:
+  delivery:
+    iam-api:
+      base-url: ${IAM_BASE_URL:http://localhost:8080/mock/iam}
+
 spring:
   profiles:
     active: http,core

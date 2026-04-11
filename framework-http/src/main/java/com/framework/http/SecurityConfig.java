@@ -15,6 +15,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/integration/**").permitAll()
                 .requestMatchers("/admin/**").permitAll()
+                .requestMatchers("/mock/**").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()

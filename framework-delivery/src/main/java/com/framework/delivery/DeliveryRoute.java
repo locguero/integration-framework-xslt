@@ -4,6 +4,11 @@ import com.framework.core.security.SecurityContextExtractor;
 import org.apache.camel.builder.RouteBuilder;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Delivery Step Routes.
@@ -45,6 +50,19 @@ public class DeliveryRoute extends RouteBuilder {
         from("direct:step-deliver-db")
                 .routeId("step-deliver-db")
                 .log("DB delivery: correlationId=${exchangeProperty.correlationId}")
+                .process(exchange -> {
+                    String xml = exchange.getIn().getBody(String.class);
+                    Document doc = DocumentBuilderFactory.newInstance()
+                            .newDocumentBuilder()
+                            .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));
+
+                    BatchRecord record = new BatchRecord();
+                    record.setCorrelationId(text(doc, "correlationId"));
+                    record.setSourceSystem(exchange.getProperty("sourceSystem", String.class));
+                    record.setEntityType(exchange.getProperty("entityType", String.class));
+                    record.setPayload(xml);
+                    exchange.getIn().setBody(record);
+                })
                 .to("jpa:com.framework.delivery.BatchRecord")
                 .log("DB delivery complete");
 
@@ -67,5 +85,10 @@ public class DeliveryRoute extends RouteBuilder {
                 .routeId("step-dead-letter")
                 .log("DEAD LETTER: correlationId=${exchangeProperty.correlationId}")
                 .to("kafka:integration.dead-letter");
+    }
+
+    private String text(Document doc, String tag) {
+        NodeList nodes = doc.getElementsByTagName(tag);
+        return nodes.getLength() > 0 ? nodes.item(0).getTextContent() : null;
     }
 }
