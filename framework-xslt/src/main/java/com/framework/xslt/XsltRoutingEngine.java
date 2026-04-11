@@ -49,8 +49,8 @@ public class XsltRoutingEngine {
     private static final Logger log = LoggerFactory.getLogger(XsltRoutingEngine.class);
 
     private final Processor      saxonProcessor;
-    private final XsltExecutable routingExecutable;
-    private final XsltExecutable fallbackExecutable;
+    private volatile XsltExecutable routingExecutable;
+    private volatile XsltExecutable fallbackExecutable;
     private final EnvelopeXmlConverter converter;
 
     public XsltRoutingEngine(EnvelopeXmlConverter converter) throws Exception {
@@ -130,9 +130,24 @@ public class XsltRoutingEngine {
         return (value == null || value.isBlank()) ? defaultValue : value;
     }
 
+    public synchronized void reloadRouting(String xsltContent) throws Exception {
+        this.routingExecutable = compileFromString(xsltContent);
+        log.info("XSLT routing-decision reloaded from database");
+    }
+
+    public synchronized void reloadFallback(String xsltContent) throws Exception {
+        this.fallbackExecutable = compileFromString(xsltContent);
+        log.info("XSLT fallback-routing reloaded from database");
+    }
+
     private XsltExecutable compile(XsltCompiler compiler, String classpathResource) throws Exception {
         try (var is = new ClassPathResource(classpathResource).getInputStream()) {
             return compiler.compile(new StreamSource(is));
         }
+    }
+
+    private XsltExecutable compileFromString(String content) throws Exception {
+        return saxonProcessor.newXsltCompiler()
+                .compile(new StreamSource(new StringReader(content)));
     }
 }

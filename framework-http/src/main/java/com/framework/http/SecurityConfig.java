@@ -14,9 +14,12 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/integration/**").permitAll()
+                .requestMatchers("/admin/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()
             )
+            .headers(headers -> headers.frameOptions(f -> f.disable())) // needed for H2 console
             .oauth2ResourceServer(oauth2 -> oauth2
                 .jwt(jwt -> {})
             );
