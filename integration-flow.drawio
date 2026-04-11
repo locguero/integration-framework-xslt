@@ -1,0 +1,283 @@
+<mxfile host="65bd71144e">
+    <diagram name="Integration Flow" id="integration-flow-main">
+        <mxGraphModel dx="2623" dy="640" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="lbl-trigger" value="HTTP TRIGGER" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="22" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl-pipeline" value="PROCESSING PIPELINE" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="122" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl-routing" value="XSLT ROUTING ENGINE" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="392" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl-steps" value="ROUTING SLIP STEPS" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="552" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl-delivery" value="DELIVERY TARGETS" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="822" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="lbl-admin" value="AUDIT &amp; ADMIN" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=10;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="1110" y="122" width="160" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="client" value="HTTP Client&#xa;(curl / frontend / service)" style="shape=mxgraph.cisco.servers.standard_server;html=1;pointerEvents=1;dashed=0;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;outlineConnect=0;" parent="1" vertex="1">
+                    <mxGeometry x="270" y="20" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="servlet" value="&lt;b&gt;Camel Servlet&lt;/b&gt;&#xa;POST /api/integration/ingest&#xa;httpMethodRestrict=POST" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="130" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="normalizer" value="&lt;b&gt;HttpEnvelopeNormalizer&lt;/b&gt;&#xa;Headers → IntegrationEnvelope&#xa;(correlationId, sourceSystem, entityType, op)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="240" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="reqlog-write" value="&lt;b&gt;RequestLogService&lt;/b&gt;&#xa;status = RECEIVED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="240" width="180" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="idempotency" value="&lt;b&gt;IdempotencyFilter&lt;/b&gt;&#xa;Redis SETNX(correlationId, PROCESSING)&#xa;TTL = 24 hours" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="350" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="redis" value="&lt;b&gt;Redis&lt;/b&gt;&#xa;port 6379" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="580" y="350" width="110" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="already-processed" value="200 OK&#xa;ALREADY_PROCESSED" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="440" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="security" value="&lt;b&gt;SecurityContextExtractor&lt;/b&gt;&#xa;Decode Bearer JWT → userId, tenantId&#xa;Non-fatal if token absent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="460" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="xslt-routing" value="&lt;b&gt;XsltRoutingProcessor&lt;/b&gt;&#xa;Saxon HE evaluates routing-decision.xsl&#xa;Input: envelope XML → Output: routingResult XML" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="570" width="260" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="xsl-file" value="routing-decision.xsl&#xa;(6 routing rules)" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;fontSize=10;fillColor=#fffacd;strokeColor=#d6b656;size=14;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="570" width="140" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="executor" value="&lt;b&gt;RoutingSlipExecutor&lt;/b&gt;&#xa;Camel dynamicRouter — calls nextStep()&#xa;until routing slip exhausted" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="220" y="690" width="260" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="branch1-label" value="CRM + USER + CREATE/MODIFY" style="text;html=1;strokeColor=none;fillColor=#d5e8d4;rounded=1;fontSize=10;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="795" width="190" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="enrich-user" value="&lt;b&gt;step-enrich-user&lt;/b&gt;&#xa;EnrichmentStep → User API&#xa;(Resilience4j circuit breaker)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="830" width="190" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="validate-user" value="&lt;b&gt;step-validate-user&lt;/b&gt;&#xa;validation-rules.xsl (Saxon HE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="900" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="transform-iam" value="&lt;b&gt;step-transform-to-iam&lt;/b&gt;&#xa;crm-user-to-iam.xsl (Saxon HE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="965" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="deliver-rest" value="&lt;b&gt;step-deliver-rest&lt;/b&gt;&#xa;HTTP → IAM Service :8082&#xa;Forward JWT in header" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="20" y="1030" width="190" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="branch2-label" value="ERP + ORDER + CREATE/UPDATE" style="text;html=1;strokeColor=none;fillColor=#dae8fc;rounded=1;fontSize=10;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="795" width="190" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="validate-order" value="&lt;b&gt;step-validate-order&lt;/b&gt;&#xa;validation-rules.xsl (Saxon HE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="830" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="transform-wms" value="&lt;b&gt;step-transform-to-wms&lt;/b&gt;&#xa;erp-order-to-wms.xsl (Saxon HE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="895" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="deliver-kafka" value="&lt;b&gt;step-deliver-kafka&lt;/b&gt;&#xa;Publish to wms.orders.inbound&#xa;kafka.KEY = correlationId" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="240" y="960" width="190" height="55" as="geometry"/>
+                </mxCell>
+                <mxCell id="branch3-label" value="CRON BATCH (triggerId=CRON)" style="text;html=1;strokeColor=none;fillColor=#fff2cc;rounded=1;fontSize=10;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="795" width="190" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="transform-generic" value="&lt;b&gt;step-transform-generic&lt;/b&gt;&#xa;generic-batch.xsl (Saxon HE)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="830" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="deliver-db" value="&lt;b&gt;step-deliver-db&lt;/b&gt;&#xa;JPA → batch_record table" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="460" y="895" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="branch4-label" value="REJECTED / NO RULE MATCHED" style="text;html=1;strokeColor=none;fillColor=#f8cecc;rounded=1;fontSize=10;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="795" width="190" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="dead-letter" value="&lt;b&gt;step-dead-letter&lt;/b&gt;&#xa;Kafka → integration.dead-letter" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="680" y="830" width="190" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="branch5-label" value="FALLBACK (enrichStatus=SKIPPED)" style="text;html=1;strokeColor=none;fillColor=#e1d5e7;rounded=1;fontSize=10;fontStyle=1;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="795" width="200" height="25" as="geometry"/>
+                </mxCell>
+                <mxCell id="async-hold" value="&lt;b&gt;step-deliver-async-hold&lt;/b&gt;&#xa;Kafka → integration.hold.queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="830" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="alert-ops" value="&lt;b&gt;step-alert-ops&lt;/b&gt;&#xa;Ops Alert (PagerDuty / Slack)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="895" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="retry-queue" value="&lt;b&gt;step-deliver-retry-queue&lt;/b&gt;&#xa;Kafka → integration.retry.queue" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="900" y="960" width="200" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="iam-api" value="&lt;b&gt;IAM Service&lt;/b&gt;&#xa;http://iam-service:8082&#xa;/api/users" style="shape=mxgraph.cisco.servers.application_server;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;verticalLabelPosition=bottom;verticalAlign=top;align=center;" parent="1" vertex="1">
+                    <mxGeometry x="45" y="1110" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="wms-kafka" value="&lt;b&gt;Kafka&lt;/b&gt;&#xa;wms.orders.inbound" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="275" y="1035" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="batch-db" value="&lt;b&gt;H2 / Postgres&lt;/b&gt;&#xa;batch_record table" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="490" y="960" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="dlt-kafka" value="&lt;b&gt;Kafka DLT&lt;/b&gt;&#xa;integration.dead-letter" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="710" y="900" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="hold-kafka" value="&lt;b&gt;Kafka Hold&lt;/b&gt;&#xa;integration.hold.queue" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="940" y="1025" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="retry-kafka" value="&lt;b&gt;Kafka Retry&lt;/b&gt;&#xa;integration.retry.queue" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1100" y="960" width="130" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="resp-202" value="202 ACCEPTED&#xa;{status, correlationId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="690" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="resp-422" value="422 REJECTED&#xa;{status, reason}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="740" y="690" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="resp-500" value="500 ERROR&#xa;{error, correlationId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="920" y="690" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="reqlog-db" value="&lt;b&gt;Request Log&lt;/b&gt;&#xa;request_log table&#xa;(H2 file: ./framework-data/db)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1130" y="240" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="xslt-db" value="&lt;b&gt;XSLT Version Store&lt;/b&gt;&#xa;xslt_version table&#xa;(versioned + active flag)" style="shape=cylinder3;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1130" y="360" width="150" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="admin-api" value="&lt;b&gt;Admin REST API&lt;/b&gt;&#xa;GET /admin/requests&#xa;GET /admin/requests/stats&#xa;GET|POST /admin/xslt/{file}&#xa;PUT /admin/xslt/{file}/activate/{v}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="480" width="170" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="react-ui" value="&lt;b&gt;React UI&lt;/b&gt; (localhost:3000)&#xa;📊 Dashboard: stats + charts&#xa;📋 Request Log: paginated table&#xa;⚙️ XSLT Admin: upload + rollback" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1120" y="625" width="170" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="h2-console" value="H2 Console&#xa;/h2-console" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1310" y="300" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="user-api" value="&lt;b&gt;User Service&lt;/b&gt;&#xa;http://user-service:8081&#xa;(enrichment source)" style="shape=mxgraph.cisco.servers.application_server;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalLabelPosition=bottom;verticalAlign=top;align=center;" parent="1" vertex="1">
+                    <mxGeometry y="830" width="50" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-client-servlet" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#6c8ebf;" parent="1" source="client" target="servlet" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-servlet-norm" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#6c8ebf;" parent="1" source="servlet" target="normalizer" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-norm-reqlog" value="log RECEIVED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;dashed=1;fontSize=10;" parent="1" source="normalizer" target="reqlog-write" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-norm-idem" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#82b366;" parent="1" source="normalizer" target="idempotency" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-idem-redis" value="SETNX check" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;dashed=1;fontSize=10;" parent="1" source="idempotency" target="redis" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-idem-dup" value="duplicate" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#d6b656;dashed=1;fontSize=10;" parent="1" source="idempotency" target="already-processed" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-idem-sec" value="new request" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#82b366;fontSize=10;" parent="1" source="idempotency" target="security" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-sec-xslt" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#d6b656;" parent="1" source="security" target="xslt-routing" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-xslt-xslfile" value="evaluates" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#d6b656;dashed=1;fontSize=10;" parent="1" source="xslt-routing" target="xsl-file" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-xslt-exec" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#d6b656;" parent="1" source="xslt-routing" target="executor" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-xsltdb-engine" value="hot reload" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;dashed=1;fontSize=10;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="xslt-db" target="xslt-routing" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-202" value="APPROVED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;fontSize=10;" parent="1" source="executor" target="resp-202" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-422" value="REJECTED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;fontSize=10;" parent="1" source="executor" target="resp-422" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-500" value="Exception" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;fontSize=10;" parent="1" source="executor" target="resp-500" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-enrich" value="CRM/USER/CREATE" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;fontSize=9;" parent="1" source="executor" target="enrich-user" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-enrich-userapi" value="REST call" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;dashed=1;fontSize=9;" parent="1" source="enrich-user" target="user-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-enrich-validate" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;" parent="1" source="enrich-user" target="validate-user" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-validate-transf" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;" parent="1" source="validate-user" target="transform-iam" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-transf-delivr" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;" parent="1" source="transform-iam" target="deliver-rest" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-delivr-iamapi" value="HTTP POST" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#6c8ebf;fontSize=9;" parent="1" source="deliver-rest" target="iam-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-valorder" value="ERP/ORDER" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#6c8ebf;fontSize=9;" parent="1" source="executor" target="validate-order" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-valorder-transwms" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#6c8ebf;" parent="1" source="validate-order" target="transform-wms" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-transwms-kafka" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#6c8ebf;" parent="1" source="transform-wms" target="deliver-kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-kafka-wmstopic" value="publish" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;fontSize=9;" parent="1" source="deliver-kafka" target="wms-kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-transgen" value="CRON/BATCH" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#d6b656;fontSize=9;" parent="1" source="executor" target="transform-generic" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-transgen-deldb" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#d6b656;" parent="1" source="transform-generic" target="deliver-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-deldb-batchdb" value="JPA insert" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#82b366;fontSize=9;" parent="1" source="deliver-db" target="batch-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-dlt" value="REJECTED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;fontSize=9;" parent="1" source="executor" target="dead-letter" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-dlt-kafka" value="publish" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;fontSize=9;" parent="1" source="dead-letter" target="dlt-kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-asynchold" value="SKIPPED/PRIORITY" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;fontSize=9;" parent="1" source="executor" target="async-hold" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-asynchold-hold" value="publish" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;fontSize=9;" parent="1" source="async-hold" target="hold-kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-asynchold-alert" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;" parent="1" source="async-hold" target="alert-ops" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-exec-retry" value="SKIPPED/STANDARD" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;fontSize=9;" parent="1" source="executor" target="retry-queue" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-retry-kafkaret" value="publish" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;fontSize=9;" parent="1" source="retry-queue" target="retry-kafka" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-reqlogw-db" value="persist" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;dashed=1;fontSize=9;" parent="1" source="reqlog-write" target="reqlog-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-202-reqlog" value="update ACCEPTED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;dashed=1;fontSize=9;" parent="1" source="resp-202" target="reqlog-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-500-reqlog" value="update FAILED" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#b85450;dashed=1;fontSize=9;" parent="1" source="resp-500" target="reqlog-db" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-reqlogdb-api" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;" parent="1" source="reqlog-db" target="admin-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-xsltdb-api" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#9673a6;" parent="1" source="xslt-db" target="admin-api" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-api-ui" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=2;strokeColor=#6c8ebf;" parent="1" source="admin-api" target="react-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e-reqlogdb-h2" value="browse" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeWidth=1;strokeColor=#666;dashed=1;fontSize=9;" parent="1" source="reqlog-db" target="h2-console" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
