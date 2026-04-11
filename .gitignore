@@ -1,1 +1,5 @@
 target/
+framework-data/
+framework-ui/node_modules/
+framework-ui/dist/
+.DS_Store

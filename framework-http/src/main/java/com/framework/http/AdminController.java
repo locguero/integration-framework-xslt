@@ -5,6 +5,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +31,25 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size) {
         return requestLogRepo.findAllByOrderByReceivedAtDesc(PageRequest.of(page, size));
+    }
+
+    @GetMapping("/requests/stats")
+    public Map<String, Object> getStats() {
+        Map<String, Long> byStatus = new LinkedHashMap<>();
+        for (Object[] row : requestLogRepo.countByStatus()) {
+            byStatus.put((String) row[0], (Long) row[1]);
+        }
+        Instant since = Instant.now().minus(24, ChronoUnit.HOURS);
+        Map<String, Long> byHour = new LinkedHashMap<>();
+        for (RequestLog r : requestLogRepo.findByReceivedAtAfterOrderByReceivedAtAsc(since)) {
+            String hour = r.getReceivedAt().truncatedTo(ChronoUnit.HOURS).toString();
+            byHour.merge(hour, 1L, Long::sum);
+        }
+        return Map.of(
+            "total", requestLogRepo.count(),
+            "byStatus", byStatus,
+            "recentByHour", byHour
+        );
     }
 
     @GetMapping("/requests/{correlationId}")
