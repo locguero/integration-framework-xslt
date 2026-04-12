@@ -31,6 +31,7 @@ public class DeliveryRoute extends RouteBuilder {
                 .routeId("step-deliver-rest")
                 .log("REST delivery: correlationId=${exchangeProperty.correlationId}")
                 .process(exchange -> {
+                    exchange.setProperty("OUTGOING_PAYLOAD", exchange.getIn().getBody(String.class));
                     String jwt = exchange.getProperty(SecurityContextExtractor.PROP_JWT_RAW, String.class);
                     if (jwt != null) exchange.getIn().setHeader("Authorization", "Bearer " + jwt);
                     exchange.getIn().setHeader("X-Correlation-Id",
@@ -42,8 +43,10 @@ public class DeliveryRoute extends RouteBuilder {
         from("direct:step-deliver-kafka")
                 .routeId("step-deliver-kafka")
                 .log("Kafka delivery: correlationId=${exchangeProperty.correlationId}")
-                .process(ex -> ex.getIn().setHeader("kafka.KEY",
-                        ex.getProperty("correlationId", String.class)))
+                .process(ex -> {
+                    ex.setProperty("OUTGOING_PAYLOAD", ex.getIn().getBody(String.class));
+                    ex.getIn().setHeader("kafka.KEY", ex.getProperty("correlationId", String.class));
+                })
                 .toD("kafka:" + wmsTopic)
                 .log("Kafka delivery complete");
 
@@ -52,6 +55,7 @@ public class DeliveryRoute extends RouteBuilder {
                 .log("DB delivery: correlationId=${exchangeProperty.correlationId}")
                 .process(exchange -> {
                     String xml = exchange.getIn().getBody(String.class);
+                    exchange.setProperty("OUTGOING_PAYLOAD", xml);
                     Document doc = DocumentBuilderFactory.newInstance()
                             .newDocumentBuilder()
                             .parse(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)));

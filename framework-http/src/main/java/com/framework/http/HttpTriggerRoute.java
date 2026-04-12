@@ -86,6 +86,8 @@ public class HttpTriggerRoute extends RouteBuilder {
                     .process(ex -> {
                         String cid = ex.getProperty("correlationId", String.class);
                         RoutingResult rr = ex.getProperty("ROUTING_RESULT", RoutingResult.class);
+                        String outgoing = ex.getProperty("OUTGOING_PAYLOAD", String.class);
+                        if (outgoing != null) requestLog.outgoing(cid, outgoing);
                         requestLog.accepted(cid, rr != null ? String.join(",", rr.routingSlip()) : null);
                         idempotency.markCompleted(cid);
                         ex.getIn().setBody("{\"status\":\"ACCEPTED\",\"correlationId\":\"" + cid + "\"}");

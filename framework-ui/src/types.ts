@@ -9,6 +9,8 @@ export interface RequestLog {
   routingSlip: string | null
   status: RequestStatus
   errorMessage: string | null
+  rawPayload: string | null
+  outgoingPayload: string | null
   receivedAt: string
   completedAt: string | null
 }

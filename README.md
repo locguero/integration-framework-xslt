@@ -102,7 +102,7 @@ XSLT rule: `CRM + USER + CREATE` → `enrich-user, validate-user, transform-to-i
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: crm-user-001" \
+  -H "X-Correlation-Id: crm-user-004" \
   -H "X-Source-System: CRM" \
   -H "X-Entity-Type: USER" \
   -H "X-Operation: CREATE" \
@@ -146,7 +146,7 @@ XSLT rule: `ERP + ORDER + CREATE` → `validate-order, transform-to-wms, deliver
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: erp-order-001" \
+  -H "X-Correlation-Id: erp-order-008" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
   -H "X-Operation: CREATE" \
@@ -176,7 +176,7 @@ XSLT rule: `ERP + ORDER + UPDATE` → `validate-order, transform-to-wms, deliver
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: erp-order-002" \
+  -H "X-Correlation-Id: erp-order-003" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
   -H "X-Operation: UPDATE" \
@@ -234,7 +234,7 @@ The `X-Trigger-Id: CRON` header bypasses the source/entity rules and routes dire
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: cron-batch-001" \
+  -H "X-Correlation-Id: cron-batch-008" \
   -H "X-Trigger-Id: CRON" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
@@ -257,7 +257,7 @@ SELECT * FROM batch_record;
 Send multiple batch records (each needs a unique `X-Correlation-Id`):
 
 ```bash
-for i in 1 2 3; do
+for i in 4 5 6; do
   curl -s -X POST http://localhost:8080/api/integration/ingest \
     -H "Content-Type: application/json" \
     -H "X-Correlation-Id: cron-batch-00$i" \

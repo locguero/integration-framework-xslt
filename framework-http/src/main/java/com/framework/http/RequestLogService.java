@@ -23,7 +23,18 @@ public class RequestLogService {
         log.setEntityType(env.entityType());
         log.setOperation(env.requestedOperation());
         log.setStatus("RECEIVED");
+        if (env.payload() != null) {
+            log.setRawPayload(env.payload().toString());
+        }
         repo.save(log);
+    }
+
+    @Transactional
+    public void outgoing(String correlationId, String outgoingPayload) {
+        repo.findByCorrelationId(correlationId).ifPresent(log -> {
+            log.setOutgoingPayload(outgoingPayload);
+            repo.save(log);
+        });
     }
 
     @Transactional

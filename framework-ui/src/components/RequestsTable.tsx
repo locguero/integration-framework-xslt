@@ -7,6 +7,10 @@ function fmt(iso: string | null) {
   return new Date(iso).toLocaleString()
 }
 
+function tryPretty(s: string) {
+  try { return JSON.stringify(JSON.parse(s), null, 2) } catch { return s }
+}
+
 function duration(r: RequestLog) {
   if (!r.completedAt) return '—'
   const ms = new Date(r.completedAt).getTime() - new Date(r.receivedAt).getTime()
@@ -76,6 +80,20 @@ export default function RequestsTable() {
                           <div className="detail-item">
                             <label>Error</label>
                             <span>{r.errorMessage ?? '—'}</span>
+                          </div>
+                        </div>
+                        <div className="payload-panels">
+                          <div className="payload-panel">
+                            <div className="payload-panel-header">
+                              <span className="payload-label incoming">Incoming Payload</span>
+                            </div>
+                            <pre className="payload-body">{r.rawPayload ? tryPretty(r.rawPayload) : '—'}</pre>
+                          </div>
+                          <div className="payload-panel">
+                            <div className="payload-panel-header">
+                              <span className="payload-label outgoing">Outgoing Payload</span>
+                            </div>
+                            <pre className="payload-body">{r.outgoingPayload ?? '—'}</pre>
                           </div>
                         </div>
                       </td>

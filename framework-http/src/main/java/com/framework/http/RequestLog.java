@@ -32,6 +32,12 @@ public class RequestLog {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "raw_payload", columnDefinition = "TEXT")
+    private String rawPayload;
+
+    @Column(name = "outgoing_payload", columnDefinition = "TEXT")
+    private String outgoingPayload;
+
     @Column(name = "received_at", nullable = false)
     private Instant receivedAt = Instant.now();
 
@@ -53,6 +59,10 @@ public class RequestLog {
     public void setStatus(String status) { this.status = status; }
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public String getRawPayload() { return rawPayload; }
+    public void setRawPayload(String rawPayload) { this.rawPayload = rawPayload; }
+    public String getOutgoingPayload() { return outgoingPayload; }
+    public void setOutgoingPayload(String outgoingPayload) { this.outgoingPayload = outgoingPayload; }
     public Instant getReceivedAt() { return receivedAt; }
     public Instant getCompletedAt() { return completedAt; }
     public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
