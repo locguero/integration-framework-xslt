@@ -10,7 +10,7 @@ framework:
 
 spring:
   profiles:
-    active: http,core
+    active: http,core,cron
   datasource:
     url: ${DB_URL:jdbc:h2:file:./framework-data/db;DB_CLOSE_DELAY=-1;AUTO_SERVER=TRUE}
     driver-class-name: ${DB_DRIVER:org.h2.Driver}

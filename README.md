@@ -102,7 +102,7 @@ XSLT rule: `CRM + USER + CREATE` → `enrich-user, validate-user, transform-to-i
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: crm-user-004" \
+  -H "X-Correlation-Id: crm-user-001" \
   -H "X-Source-System: CRM" \
   -H "X-Entity-Type: USER" \
   -H "X-Operation: CREATE" \
@@ -146,7 +146,7 @@ XSLT rule: `ERP + ORDER + CREATE` → `validate-order, transform-to-wms, deliver
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: erp-order-008" \
+  -H "X-Correlation-Id: erp-order-003" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
   -H "X-Operation: CREATE" \
@@ -176,7 +176,7 @@ XSLT rule: `ERP + ORDER + UPDATE` → `validate-order, transform-to-wms, deliver
 ```bash
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: erp-order-003" \
+  -H "X-Correlation-Id: erp-order-004" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
   -H "X-Operation: UPDATE" \
@@ -225,16 +225,18 @@ Expected: `200 OK` — `{"status":"ALREADY_PROCESSED","correlationId":"erp-order
 
 ---
 
-### CRON Batch → writes to batch_record table
+### CRON Batch → simulated via HTTP (dev/test only)
 
-XSLT rule: `triggerId=CRON` → `transform-generic, deliver-db`
-
-The `X-Trigger-Id: CRON` header bypasses the source/entity rules and routes directly to the batch database delivery step. The record is written to the `batch_record` table and can be verified in the H2 console.
+The scheduler fires automatically (see [Scheduled CRON Flow](#scheduled-cron-flow) below). During
+development you can simulate a single CRON record by sending an HTTP request with
+`X-Trigger-Id: CRON` plus the source/entity/operation values that match an active
+`CronRequestType` row:
 
 ```bash
+# Simulates what the scheduler produces for an ERP ORDER CREATE request type
 curl -i -X POST http://localhost:8080/api/integration/ingest \
   -H "Content-Type: application/json" \
-  -H "X-Correlation-Id: cron-batch-008" \
+  -H "X-Correlation-Id: cron-batch-006" \
   -H "X-Trigger-Id: CRON" \
   -H "X-Source-System: ERP" \
   -H "X-Entity-Type: ORDER" \
@@ -247,14 +249,10 @@ curl -i -X POST http://localhost:8080/api/integration/ingest \
   }'
 ```
 
-Expected: `202 Accepted` — verify the record was written:
+Expected: `202 Accepted` — XSLT rule `CRON + ERP/ORDER/CREATE` calls
+`erp-order-steps(execMode=BATCH)` → `validate-order,transform-to-wms,deliver-kafka`.
 
-```bash
-# H2 console at http://localhost:8080/h2-console
-SELECT * FROM batch_record;
-```
-
-Send multiple batch records (each needs a unique `X-Correlation-Id`):
+Send multiple records (each needs a unique `X-Correlation-Id`):
 
 ```bash
 for i in 4 5 6; do
@@ -269,8 +267,6 @@ for i in 4 5 6; do
   echo ""
 done
 ```
-
-> **Note:** In production the `framework-cron` module drives this automatically via a Quartz scheduler (every 5 minutes), polling `ErpPollingAdapter` and creating envelopes with `triggerId=CRON` internally — no HTTP call needed.
 
 ---
 
@@ -290,6 +286,109 @@ Expected: `422 Unprocessable Entity` — `{"status":"REJECTED","reason":"No rout
 
 ---
 
+## Scheduled CRON Flow
+
+The `framework-cron` module runs a **Quartz-backed scheduler** that fires on a configurable
+cron expression (default: **every hour**).  Each tick it loads the active
+`CronRequestType` rows from the database, calls the ERP adapter once per type,
+and pushes every returned record through the same integration pipeline as HTTP
+requests.
+
+### Schedule configuration
+
+Edit `framework-cron/src/main/resources/application-cron.yml` and restart:
+
+```yaml
+framework:
+  cron:
+    erp-poll:
+      cron: "0 0 * * * ?"       # every hour (default)
+      # cron: "0 */30 * * * ?"  # every 30 minutes
+      # cron: "0 */5 * * * ?"   # every 5 minutes (local dev)
+      # cron: "0 0 2 * * ?"     # daily at 02:00
+```
+
+The expression uses Quartz cron syntax (6 fields: second minute hour day month weekday).
+
+### End-to-end flow
+
+```
+Quartz scheduler (every hour)
+  │
+  ├─ reads cron_request_type WHERE active = true   ← managed in Admin UI
+  │
+  ├─ for each active type (e.g. ERP / ORDER / CREATE):
+  │     ErpPollingAdapter.fetchPendingRecords(watermark)
+  │     ↓  returns List<Map>
+  │     split → seda:cron-processing (bounded, 2 concurrent consumers)
+  │     ↓
+  │     IntegrationEnvelope(triggerId=CRON, sourceSystem=ERP,
+  │                          entityType=ORDER, operation=CREATE)
+  │     ↓
+  │     IdempotencyFilter  (Redis – skip already-seen correlationIds)
+  │     ↓
+  │     XsltRoutingProcessor  →  routing-decision.xsl
+  │     ↓
+  │     routingSlip = validate-order,transform-to-wms,deliver-kafka
+  │     ↓
+  │     RoutingSlipExecutor  (step-by-step Camel dynamicRouter)
+  │     ↓
+  │     WatermarkRepository.updateWatermark(wmKey, recordId)
+  │
+  └─ idle until next tick
+```
+
+### Chainable XSLT routing
+
+`routing-decision.xsl` extracts each source/entity routing logic into a **named template**
+so the CRON branch and the HTTP branch share the same step list — changing the template
+updates both triggers at once.
+
+```xml
+<!-- Named template owned by ERP / ORDER logic -->
+<xsl:template name="erp-order-steps">
+  <xsl:param name="execMode" as="xs:string" select="'TRANSIENT'"/>
+  <routingSlip>validate-order,transform-to-wms,deliver-kafka</routingSlip>
+  <executionMode><xsl:value-of select="$execMode"/></executionMode>
+  <destination>WMS_KAFKA_TOPIC</destination>
+  <slaClass>STANDARD</slaClass>
+  <validationResult>APPROVED</validationResult>
+  <rejectionReason/>
+</xsl:template>
+
+<!-- HTTP branch: ERP ORDER CREATE → DURABLE -->
+<xsl:when test="$src='ERP' and $ent='ORDER' and $op='CREATE'">
+  <xsl:call-template name="erp-order-steps">
+    <xsl:with-param name="execMode" select="'DURABLE'"/>
+  </xsl:call-template>
+</xsl:when>
+
+<!-- CRON branch: same step chain, BATCH execution mode -->
+<xsl:when test="$trig='CRON' and $src='ERP' and $ent='ORDER'
+                and ($op='CREATE' or $op='UPDATE')">
+  <xsl:call-template name="erp-order-steps">
+    <xsl:with-param name="execMode" select="'BATCH'"/>
+  </xsl:call-template>
+</xsl:when>
+
+<!-- CRON fallback: unknown type → stage to BATCH_DB for review -->
+<xsl:when test="$trig='CRON'">
+  <xsl:call-template name="cron-default-steps"/>
+</xsl:when>
+```
+
+**Rule for adding a new request type:**
+
+1. Create (or activate) a row in the **Admin UI → Cron Config** page.
+2. In `routing-decision.xsl`, add a named template for the new source/entity
+   combination (or reuse an existing one).
+3. Add an `<xsl:when>` in the CRON block that matches the new triple and calls
+   the template with `execMode='BATCH'`.
+4. If an HTTP rule already exists for the same source/entity, refactor it to
+   call the same template with `execMode='DURABLE'` or `'TRANSIENT'`.
+
+---
+
 ## Admin API
 
 All endpoints are unauthenticated for local development.
@@ -306,6 +405,39 @@ curl -s http://localhost:8080/admin/requests/erp-order-001 | python3 -m json.too
 # Summary counts + hourly chart data
 curl -s http://localhost:8080/admin/requests/stats | python3 -m json.tool
 ```
+
+### Cron request-type configuration
+
+```bash
+# List all request types (active and disabled)
+curl -s http://localhost:8080/admin/cron-types | python3 -m json.tool
+
+# Create a new request type
+curl -X POST http://localhost:8080/admin/cron-types \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":         "ERP Invoice Sync",
+    "sourceSystem": "ERP",
+    "entityType":   "INVOICE",
+    "operation":    "CREATE",
+    "notes":        "Hourly sync of new invoices from ERP"
+  }'
+
+# Update name / notes (does not affect active state)
+curl -X PUT http://localhost:8080/admin/cron-types/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"ERP Order Sync","sourceSystem":"ERP","entityType":"ORDER","operation":"CREATE"}'
+
+# Toggle active ↔ disabled (records who made the change)
+curl -X PUT "http://localhost:8080/admin/cron-types/1/toggle?by=jane.doe"
+
+# Delete a request type permanently
+curl -X DELETE http://localhost:8080/admin/cron-types/1
+```
+
+The `disabledAt` and `disabledBy` fields are set automatically on disable and
+cleared on re-enable. Changes take effect on the **next scheduled tick** — no
+restart required.
 
 ### XSLT version management
 
@@ -344,22 +476,27 @@ Password:  (leave blank)
 | `framework-xslt` | Saxon HE engine, 6 XSLT stylesheets, Camel step routes for validation and transformation |
 | `framework-http` | HTTP ingest route, EnrichmentStep, RequestLog audit, XSLT version store, Admin API |
 | `framework-kafka` | Kafka consumer trigger, SEDA backpressure, dead-letter topic |
-| `framework-cron` | Cron poll trigger, watermark tracking, ERP adapter |
+| `framework-cron` | Quartz scheduler (default hourly), `CronRequestType` DB config, watermark tracking, ERP adapter |
 | `framework-delivery` | REST / Kafka / DB / hold queue / retry delivery steps |
-| `framework-ui` | React dashboard (Vite + Recharts) — request log table, charts, XSLT admin |
+| `framework-ui` | React dashboard (Vite + Recharts) — request log table, charts, XSLT admin, Cron Config admin |
 
 ---
 
 ## XSLT Routing Rules
 
-| Source | Entity | Operation | Steps |
-|--------|--------|-----------|-------|
-| `CRM` | `USER` | `CREATE`, `MODIFY` | enrich-user → validate-user → transform-to-iam → deliver-rest |
-| `CRM` | `USER` | `DELETE` | dead-letter (rejected) |
-| `ERP` | `ORDER` | `CREATE` | validate-order → transform-to-wms → deliver-kafka (DURABLE) |
-| `ERP` | `ORDER` | `UPDATE` | validate-order → transform-to-wms → deliver-kafka |
-| `CRON` | any | any | transform-generic → deliver-db |
-| *(any)* | *(any)* | *(any)* | dead-letter (rejected — no rule matched) |
+Logic lives in named templates inside `routing-decision.xsl`; the CRON branch calls
+the same templates as the HTTP branch, just with `execMode=BATCH`.
+
+| Trigger | Source | Entity | Operation | Named template | Steps | Exec mode |
+|---------|--------|--------|-----------|----------------|-------|-----------|
+| HTTP | `CRM` | `USER` | `CREATE`, `MODIFY` | `crm-user-steps` | enrich-user → validate-user → transform-to-iam → deliver-rest | TRANSIENT |
+| HTTP | `CRM` | `USER` | `DELETE` | *(inline)* | dead-letter (rejected) | TRANSIENT |
+| HTTP | `ERP` | `ORDER` | `CREATE` | `erp-order-steps` | validate-order → transform-to-wms → deliver-kafka | DURABLE |
+| HTTP | `ERP` | `ORDER` | `UPDATE` | `erp-order-steps` | validate-order → transform-to-wms → deliver-kafka | TRANSIENT |
+| **CRON** | `ERP` | `ORDER` | `CREATE`, `UPDATE` | **`erp-order-steps`** | validate-order → transform-to-wms → deliver-kafka | **BATCH** |
+| **CRON** | `CRM` | `USER` | any | **`crm-user-steps`** | enrich-user → validate-user → transform-to-iam → deliver-rest | **BATCH** |
+| **CRON** | *(any)* | *(any)* | *(any)* | **`cron-default-steps`** | transform-generic → deliver-db | BATCH |
+| *(any)* | *(any)* | *(any)* | *(any)* | *(none)* | dead-letter (rejected) | TRANSIENT |
 
 **Fallback routing** (enrichment circuit breaker open):
 

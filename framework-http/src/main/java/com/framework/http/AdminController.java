@@ -1,5 +1,7 @@
 package com.framework.http;
 
+import com.framework.cron.CronRequestType;
+import com.framework.cron.CronRequestTypeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +17,16 @@ import java.util.Map;
 @RequestMapping("/admin")
 public class AdminController {
 
-    private final RequestLogRepository requestLogRepo;
-    private final XsltVersionService xsltVersionService;
+    private final RequestLogRepository      requestLogRepo;
+    private final XsltVersionService        xsltVersionService;
+    private final CronRequestTypeRepository cronRequestTypeRepo;
 
     public AdminController(RequestLogRepository requestLogRepo,
-                           XsltVersionService xsltVersionService) {
-        this.requestLogRepo = requestLogRepo;
-        this.xsltVersionService = xsltVersionService;
+                           XsltVersionService xsltVersionService,
+                           CronRequestTypeRepository cronRequestTypeRepo) {
+        this.requestLogRepo      = requestLogRepo;
+        this.xsltVersionService  = xsltVersionService;
+        this.cronRequestTypeRepo = cronRequestTypeRepo;
     }
 
     // ── Request log ──────────────────────────────────────────────────────────
@@ -103,5 +108,75 @@ public class AdminController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
+    }
+
+    // ── Cron request-type configuration ──────────────────────────────────────
+
+    @GetMapping("/cron-types")
+    public List<CronRequestType> listCronTypes() {
+        return cronRequestTypeRepo.findAllByOrderByNameAsc();
+    }
+
+    @GetMapping("/cron-types/{id}")
+    public ResponseEntity<CronRequestType> getCronType(@PathVariable Long id) {
+        return cronRequestTypeRepo.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/cron-types")
+    public ResponseEntity<?> createCronType(@RequestBody CronRequestType body) {
+        try {
+            body.setCreatedAt(Instant.now());
+            body.setActive(true);
+            body.setDisabledAt(null);
+            body.setDisabledBy(null);
+            CronRequestType saved = cronRequestTypeRepo.save(body);
+            return ResponseEntity.ok(saved);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/cron-types/{id}")
+    public ResponseEntity<?> updateCronType(@PathVariable Long id,
+                                             @RequestBody CronRequestType body) {
+        return cronRequestTypeRepo.findById(id).map(existing -> {
+            existing.setName(body.getName());
+            existing.setSourceSystem(body.getSourceSystem());
+            existing.setEntityType(body.getEntityType());
+            existing.setOperation(body.getOperation());
+            existing.setNotes(body.getNotes());
+            return ResponseEntity.ok((Object) cronRequestTypeRepo.save(existing));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Enable or disable a request type.
+     * Pass {@code ?by=username} to record who made the change.
+     */
+    @PutMapping("/cron-types/{id}/toggle")
+    public ResponseEntity<?> toggleCronType(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "admin") String by) {
+        return cronRequestTypeRepo.findById(id).map(existing -> {
+            boolean nowActive = !existing.isActive();
+            existing.setActive(nowActive);
+            if (nowActive) {
+                existing.setDisabledAt(null);
+                existing.setDisabledBy(null);
+            } else {
+                existing.setDisabledAt(Instant.now());
+                existing.setDisabledBy(by);
+            }
+            return ResponseEntity.ok((Object) cronRequestTypeRepo.save(existing));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/cron-types/{id}")
+    public ResponseEntity<Void> deleteCronType(@PathVariable Long id) {
+        if (!cronRequestTypeRepo.existsById(id)) return ResponseEntity.notFound().build();
+        cronRequestTypeRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }

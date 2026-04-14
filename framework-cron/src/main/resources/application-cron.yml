@@ -1,14 +1,10 @@
-spring:
-  datasource:
-    url: ${DB_URL:jdbc:h2:mem:framework;DB_CLOSE_DELAY=-1}
-    driver-class-name: ${DB_DRIVER:org.h2.Driver}
-    username: ${DB_USER:sa}
-    password: ${DB_PASS:}
-  sql:
-    init:
-      mode: always
-
 framework:
   cron:
     erp-poll:
+      # Default: every hour on the hour.  Override with any Quartz cron expression.
+      # Examples:
+      #   every 5 minutes  → "0 */5 * * * ?"
+      #   every 30 minutes → "0 */30 * * * ?"
+      #   every hour       → "0 0 * * * ?"
+      #   every day at 2am → "0 0 2 * * ?"
       cron: "0 */5 * * * ?"

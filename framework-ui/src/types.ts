@@ -38,3 +38,16 @@ export interface XsltVersion {
   comment: string
   uploadedAt: string
 }
+
+export interface CronRequestType {
+  id: number
+  name: string
+  sourceSystem: string
+  entityType: string
+  operation: string
+  active: boolean
+  notes: string | null
+  createdAt: string
+  disabledAt: string | null
+  disabledBy: string | null
+}
